@@ -26,7 +26,7 @@ int main(int argc, char * const * argv){
 
                 if (isdigit(*cvalue) > 0){
                     cantidadDeHijos = atoi(cvalue);
-                    printf("Cantidad de hijos: %d\n\n", cantidadDeHijos);
+                    printf("Cantidad de hijos: %d\n", cantidadDeHijos);
                 }
 
                 else {
