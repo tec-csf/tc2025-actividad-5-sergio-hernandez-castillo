@@ -27,6 +27,12 @@ int main(int argc, char * const * argv){
                 if (isdigit(*cvalue) > 0){
                     cantidadDeHijos = atoi(cvalue);
                     printf("Cantidad de hijos: %d\n\n", cantidadDeHijos);
+
+                    if (cantidadDeHijos == 0){
+                        printf("No se pueden crear %d hijos\n", cantidadDeHijos);
+
+                        exit(0);
+                    }
                 }
 
                 else {
@@ -56,26 +62,22 @@ int main(int argc, char * const * argv){
         }
     }
 
-    if (cantidadDeHijos == 0){
-        printf("No se pueden crear %d hijos\n", cantidadDeHijos);
+    int * tubos = malloc(sizeof(int) * (cantidadDeHijos * 2));
+    int j = 0;
+    int h = 1;
+    pid_t pid;
+    int vader;
+    char testigo = 'T';
+    char caracter;
 
-        return 0;
+    for (; j < cantidadDeHijos; ++j){
+        pipe((tubos + (2 * j)));
     }
 
-    else if (cantidadDeHijos > 0){
-        int * tubos = (int *) malloc(sizeof(int) * (cantidadDeHijos * 2));
-        int j = 0;
-        pid_t pid;
-        char testigo = 'T';
-        char caracter;
+    j = 1;
 
-        for (; j < cantidadDeHijos; ++j){
-            pipe((tubos + (2 * j)));
-        }
-
-        j = 0;
-
-        for (; j < cantidadDeHijos; ++j){
+    for (; j <= cantidadDeHijos + 1; ++j){
+        if (j <= cantidadDeHijos){
             pid = fork();
 
             if (pid == -1){
@@ -92,26 +94,46 @@ int main(int argc, char * const * argv){
 
                 sleep(5);
 
-                printf("<-- Soy el proceso con PID %d y acabo de enviar el testigo '%c'.\n", getpid(), caracter);
+                if (j == cantidadDeHijos){
+                    close(*(tubos));
+                    write(*(tubos + 1), &testigo, sizeof(char));
 
-                close(*(tubos + (2 * j)));
-                write(*(tubos + (2 * j + 1)), &caracter, sizeof(char));
+                    printf("<-- Soy el proceso con PID %d y acabo de enviar el testigo '%c' de vuelta al padre.\n", getpid(), caracter);
+                }
+
+                else {
+                    close(*(tubos + (2 * j)));
+                    write(*(tubos + (2 * j + 1)), &caracter, sizeof(char));
+
+                    printf("<-- Soy el proceso con PID %d y acabo de enviar el testigo '%c'.\n", getpid(), caracter);
+                }
             }
 
             else {
-                if (j == 0){
+                if (j == 1){
                     close(*(tubos));
                     write(*(tubos + 1), &testigo, sizeof(char));
 
                     printf("<-- Soy el proceso padre con PID %d y acabo de enviar el testigo '%c'.\n", getpid(), testigo);
+
+                    vader = getpid();
                 }
+
+                break;
             }
         }
 
-        waitpid(pid, NULL, 0);
+        else if (j == cantidadDeHijos + 1){
+            close(*(tubos + (2 * h - 1)));
+            read(*(tubos + (2 * h - 2)), &caracter, sizeof(char));
 
-        free(tubos);
-
-        return 0;
+            printf("--> Soy el proceso padre con PID %d y recibí el testigo '%c'.\n", vader, caracter);
+        }
     }
+
+    waitpid(pid, NULL, 0);
+
+    free(tubos);
+
+    return 0;
 }
